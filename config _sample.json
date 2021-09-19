@@ -1,0 +1,11 @@
+{
+  "ak": "",
+  "sk": "",
+  "bucket": "winks",
+  "endpoint": "https://gz.bcebos.com",
+  "paths": [
+    "S1/轴伊Joi_Channel/",
+    "S2/轴伊Joi_Channel/",
+    "S3/轴伊Joi_Channel/"
+  ]
+}
