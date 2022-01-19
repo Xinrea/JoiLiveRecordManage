@@ -1,10 +1,10 @@
 <template>
   <v-row>
     <v-col
-      cols="12"
+      cols="6"
     >
       <v-card>
-        <v-card-title>录播列表</v-card-title>
+        <v-card-title>{{getFullName(this.user)}} 录播列表</v-card-title>
         <v-list two-line>
             <v-list-item-group>
               <v-list-item
@@ -21,6 +21,22 @@
               </v-list-item>
             </v-list-item-group>
         </v-list>
+      </v-card>
+    </v-col>
+    <v-col
+      cols="6"
+      >
+      <v-card style="margin-right: 20px">
+        <v-card-title>弹幕搜索</v-card-title>
+        <v-card-text>
+          <v-text-field v-model="searchText"/>
+          <v-btn @click="search">Search</v-btn>
+            <v-data-table
+            :headers="table.headers"
+            :items="table.danmus"
+            :items-per-page="10"
+          ></v-data-table>
+        </v-card-text>
       </v-card>
     </v-col>
     <v-dialog
@@ -53,7 +69,7 @@
                 >
                   {{ formatSize(f.size) }}
                 </v-chip>
-                {{ f.name.substring(17) }}
+                {{ getFileName(f.name) }}
                 <v-spacer />
                 <v-list-item-action>
                   <v-btn plain
@@ -89,8 +105,12 @@
 
 <script>
 import axios from 'axios'
+import '../plugins/format'
+const endpoint = "https://record.joi-club.cn"
+// const endpoint = "http://localhost:8053"
   export default {
     name: 'FileList',
+    props: ['user'],
     data() {
       return {
         files: [],
@@ -98,10 +118,30 @@ import axios from 'axios'
         showedItem: {
           live_title: ""
         },
+        searchText: "",
+        table: {
+          headers: [
+            { text: '时间', value: 'create_time' },
+            { text: '用户', value: 'user_name' },
+            { text: '内容', value: 'content' },
+          ],
+          danmus: []
+        }
+      }
+    },
+    watch: {
+      user: function(val) {
+        console.log(val)
+        axios.get(endpoint+"/api/list?user="+this.user).then(resp=>{
+          let data = resp.data
+          if (data.code === 0) {
+            this.files = data.data
+          }
+        })
       }
     },
     mounted() {
-      axios.get("https://record.joi-club.cn/api/list").then(resp=>{
+      axios.get(endpoint+"/api/list?user="+this.user).then(resp=>{
         let data = resp.data
         if (data.code === 0) {
           this.files = data.data
@@ -109,6 +149,57 @@ import axios from 'axios'
       })
     },
     methods: {
+      search() {
+        if (this.searchText === "") {
+          return
+        }
+        console.log(this.searchText)
+        axios.get(endpoint+"/api/dsearch?room="+this.getRoom(this.user)+"&text="+this.searchText).then(resp=>{
+          let data = resp.data
+          if (data.code === 0) {
+            if (data.data === null) {
+              this.table.danmus = []
+            } else {
+              data.data.forEach(item=>{
+                let t = new Date(item.create_time)
+                item.create_time = t.format('yyyy-mm-dd HH:MM:ss')
+              })
+              this.table.danmus = data.data
+            }
+          }
+        })
+      },
+      getFileName(name) {
+        return name.split('/', 3)[2]
+      },
+      getFullName(name) {
+        switch (name) {
+          case 'joi':
+            return '轴伊Joi_Channel'
+          case 'kiti':
+            return '吉吉Kiti'
+          case 'qilou':
+            return '绮楼Qilou'
+          case 'tocci':
+            return '桃星Tocci'
+          default:
+            return ''
+        }
+      },
+      getRoom(name) {
+        switch (name) {
+          case 'joi':
+            return 21484828
+          case 'kiti':
+            return 23017343
+          case 'qilou':
+            return 23017346
+          case 'tocci':
+            return 23017349
+          default:
+            return 21484828
+        }
+      },
       showDetail(item) {
         this.showedItem = item
         this.updateShowedItem()
@@ -116,7 +207,7 @@ import axios from 'axios'
       },
       updateShowedItem() {
         this.showedItem.file.forEach((f,i,a) => {
-          axios.get("https://record.joi-club.cn/api/status?name="+f.name).then(resp=>{
+          axios.get(endpoint+"/api/status?name="+f.name).then(resp=>{
             let res = resp.data
             if (res.code === 0) {
               a[i].valid = res.data.restore
@@ -140,7 +231,7 @@ import axios from 'axios'
         }
       },
       download(name) {
-        axios.get("https://record.joi-club.cn/api/download?name="+name).then(resp=>{
+        axios.get(endpoint+"/api/download?name="+name).then(resp=>{
           let data = resp.data
           if (data.code === 0) {
             window.open(data.data)
@@ -150,7 +241,7 @@ import axios from 'axios'
         })
       },
       restore(name) {
-        axios.get("https://record.joi-club.cn/api/restore?name="+name).then(resp=>{
+        axios.get(endpoint+"/api/restore?name="+name).then(resp=>{
           let data = resp.data
           if (data.code === 0) {
             this.updateShowedItem()

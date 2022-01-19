@@ -2,6 +2,7 @@ package main
 
 import (
 	"joirecord/internal/api"
+	"joirecord/internal/db"
 	"joirecord/internal/logger"
 
 	"github.com/baidubce/bce-sdk-go/services/bos"
@@ -15,15 +16,37 @@ func main() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("json")
 	viper.AddConfigPath("./")
-	viper.SetDefault("paths", []string{"S1/轴伊Joi_Channel/", "S2/轴伊Joi_Channel/", "S3/轴伊Joi_Channel/"})
+	viper.SetDefault("paths", map[string][]string{
+		"joi": {
+			"S1/轴伊Joi_Channel/",
+			"S2/轴伊Joi_Channel/",
+			"S3/轴伊Joi_Channel/",
+		},
+		"kiti": {
+			"S2/吉吉Kiti/",
+		},
+		"qilou": {
+			"S2/绮楼Qilou/",
+		},
+		"tocci": {
+			"S2/桃星Tocci/",
+		},
+	})
 	viper.SetDefault("ak", "")
 	viper.SetDefault("sk", "")
 	viper.SetDefault("endpoint", "https://gz.bcebos.com")
 	viper.SetDefault("bucket", "winks")
+	viper.SetDefault("database", map[string]string{
+		"host":     "localhost",
+		"user":     "root",
+		"password": "",
+		"dbname":   "danmu_db",
+	})
 	err := viper.ReadInConfig()
 	if err != nil {
 		viper.SafeWriteConfig()
 	}
+	db.Init()
 	log.Info("JoiRecord Backend Start")
 	AK, SK := viper.GetString("ak"), viper.GetString("sk")
 

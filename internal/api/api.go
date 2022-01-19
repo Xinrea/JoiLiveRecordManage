@@ -3,9 +3,11 @@ package api
 import (
 	"errors"
 	"fmt"
+	"joirecord/internal/db"
 	"joirecord/internal/logger"
 	"regexp"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/baidubce/bce-sdk-go/services/bos"
@@ -33,13 +35,14 @@ func New(bosClient *bos.Client) *Server {
 	server := &Server{
 		s:     r,
 		c:     bosClient,
-		cache: nil,
+		cache: &RecordCache{},
 	}
 	r.Use(static.Serve("/", static.LocalFile("frontend/dist", false)))
 	r.GET("/api/list", server.getRecordList)
 	r.GET("/api/download", server.getDownloadUrl)
 	r.GET("/api/status", server.getRestoreStatus)
 	r.GET("/api/restore", server.restoreObject)
+	r.GET("/api/dsearch", server.search)
 	return server
 }
 
@@ -71,10 +74,31 @@ type Response struct {
 }
 
 func (s *Server) getRecordList(c *gin.Context) {
+	user := c.Query("user")
+	if user == "" {
+		user = "joi"
+	}
 	s.updateCache()
 	c.JSON(200, Response{
 		Code: 0,
-		Data: s.cache.Records,
+		Data: s.cache.Records[user],
+	})
+}
+
+func (s *Server) search(c *gin.Context) {
+	room := c.Query("room")
+	r, err := strconv.Atoi(room)
+	if err != nil {
+		c.JSON(200, Response{
+			Code: -1,
+			Data: err,
+		})
+		return
+	}
+	text := c.Query("text")
+	c.JSON(200, Response{
+		Code: 0,
+		Data: db.GetDanmu(r, text),
 	})
 }
 
@@ -164,16 +188,24 @@ type FileStatus struct {
 }
 
 type RecordCache struct {
-	Records    []*Record
+	Records    map[string][]*Record
 	UpdateTime time.Time
 }
 
 func (s *Server) updateCache() {
-	if s.cache != nil && (time.Now().Sub(s.cache.UpdateTime).Seconds() < 300) && len(s.cache.Records) > 0 {
+	if s.cache != nil && (time.Since(s.cache.UpdateTime).Seconds() < 300) && len(s.cache.Records) > 0 {
 		return
 	}
+	s.cache.Records = make(map[string][]*Record)
+	s.doupdateCache("joi")
+	s.doupdateCache("kiti")
+	s.doupdateCache("qilou")
+	s.doupdateCache("tocci")
+	s.cache.UpdateTime = time.Now()
+}
+func (s *Server) doupdateCache(user string) {
 	log.Info("Start Updating Cache")
-	paths := viper.GetStringSlice("paths")
+	paths := viper.GetStringSlice("paths." + user)
 	bucket := viper.GetString("bucket")
 	args := new(api.ListObjectsArgs)
 	args.Delimiter = "/"
@@ -224,10 +256,7 @@ func (s *Server) updateCache() {
 		allRecords = append(allRecords, v)
 	}
 	sort.Sort(RecordSlice(allRecords))
-	s.cache = &RecordCache{
-		Records:    allRecords,
-		UpdateTime: time.Now(),
-	}
+	s.cache.Records[user] = allRecords
 }
 
 // [2021-09-07 21-04-02][轴伊Joi_Channel][弹丸论破2].mp4

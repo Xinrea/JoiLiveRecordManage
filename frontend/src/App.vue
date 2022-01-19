@@ -1,7 +1,6 @@
 <template>
   <v-app id="inspire">
     <v-navigation-drawer
-      v-model="drawer"
       app
     >
       <v-sheet
@@ -16,26 +15,42 @@
           <img src="joi.png" />
         </v-avatar>
 
-        <div>轴伊录播管理 @Xinrea</div>
+        <div>录播管理 @Xinrea</div>
       </v-sheet>
 
       <v-divider></v-divider>
 
       <v-list>
-        <v-list-item link>
+        <v-list-item link @click="changeCurrent('joi')">
           <v-list-item-icon>
             <v-icon>mdi-file-video</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title>录播文件列表</v-list-item-title>
+            <v-list-item-title>轴伊Joi_Channel</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item link>
+        <v-list-item link @click="changeCurrent('kiti')">
           <v-list-item-icon>
-            <v-icon>mdi-magnify</v-icon>
+            <v-icon>mdi-file-video</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title>弹幕搜索</v-list-item-title>
+            <v-list-item-title>吉吉Kiti</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item link @click="changeCurrent('qilou')">
+          <v-list-item-icon>
+            <v-icon>mdi-file-video</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>绮楼Qilou</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item link @click="changeCurrent('tocci')">
+          <v-list-item-icon>
+            <v-icon>mdi-file-video</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>桃星Tocci</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -46,17 +61,23 @@
         class="py-8 px-6"
         fluid
       >
-        <router-view />
+        <file-list :user="current"></file-list>
       </v-container>
     </v-main>
   </v-app>
 </template>
 
 <script>
+import FileList from './components/FileList.vue'
   export default {
+  components: { FileList },
     data: () => ({
-      cards: ['Today', 'Yesterday'],
-      drawer: null
+      current: 'joi'
     }),
+    methods: {
+      changeCurrent(name) {
+        this.current = name
+      }
+    }
   }
 </script>
