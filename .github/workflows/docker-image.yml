@@ -18,7 +18,14 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         ecr: auto
         logout: true
+    - name: Yarn Setuo
+      uses: DerYeger/yarn-setup-action@v1.0.1
+      with:
+        node-version: v16.13.0
     - uses: actions/checkout@v2
+    - name: Build Frontend
+      working-directory: ./frontend
+      run: yarn install && yarn build
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag registry.cn-hongkong.aliyuncs.com/joi/jrecord:latest
     - name: Push Docker image
