@@ -7,6 +7,5 @@ FROM ubuntu:latest
 RUN apt-get update && apt-get install -y ca-certificates
 WORKDIR /work
 COPY --from=0 ./work/jrecord .
-COPY ./config.json .
 COPY ./frontend/dist/ ./frontend/dist/
 CMD ["./jrecord"]
