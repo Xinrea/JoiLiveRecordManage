@@ -106,7 +106,7 @@
 <script>
 import axios from 'axios'
 import '../plugins/format'
-const endpoint = "https://record.joi-club.cn"
+const endpoint = "https://record.vjoi.cn"
 // const endpoint = "http://localhost:8053"
   export default {
     name: 'FileList',
