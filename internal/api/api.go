@@ -211,14 +211,26 @@ func (s *Server) doupdateCache(user string) {
 	args.Delimiter = "/"
 	liveMap := make(map[string]*Record)
 	for _, p := range paths {
+		args.Marker = ""
+		entrys := []api.ObjectSummaryType{}
 		args.Prefix = p
 		objectResp, err := s.c.ListObjects(bucket, args)
 		if err != nil {
 			log.Error("Update Cache Failed: ", err)
 			return
 		}
-		log.Infof("Files in %s : %d", p, len(objectResp.Contents))
-		for _, entry := range objectResp.Contents {
+		entrys = append(entrys, objectResp.Contents...)
+		for objectResp.IsTruncated {
+			args.Marker = objectResp.NextMarker
+			objectResp, err = s.c.ListObjects(bucket, args)
+			if err != nil {
+				log.Error("Update Cache Failed: ", err)
+				return
+			}
+			entrys = append(entrys, objectResp.Contents...)
+		}
+		log.Infof("Files in %s : %d", p, len(entrys))
+		for _, entry := range entrys {
 			if entry.Key[len(entry.Key)-1] == '/' {
 				continue
 			}
